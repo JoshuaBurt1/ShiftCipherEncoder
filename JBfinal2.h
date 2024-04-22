@@ -29,5 +29,5 @@ void encode(char* inputFile, char* outputFile, int shiftNum);
 int wordMatchesList(char* word);
 
 //attempts to decode an inputFile text and outputs text to outputFile
-void decode(char* inputFile);
+void shiftDecode(char* inputFile);
 

@@ -27,7 +27,8 @@ int main(void){
            encode(inputFile, outputFile, shiftNum);
         }
         else if (choice == DECODE) {
-           decode(inputFile);
+        	printf("Decode type = shift \n");
+           	shiftDecode(inputFile);
         }
         printf("\n");
     }
@@ -160,19 +161,28 @@ void encode(char* inputFile, char* outputFile, int shiftNum){
 
 // Function to check if a word matches a list of target words
 int wordMatchesList(char* word) {
-    char* targetWords[] = {"and", "or", "the", "my", "This"}; // List of target words
-    int numTargetWords = sizeof(targetWords) / sizeof(targetWords[0]); // Number of target words
-	int i;
-    for (i = 0; i < numTargetWords; ++i) {
-        if (strcmp(word, targetWords[i]) == 0) {
-            return 1; // Match found
+    char* englishWords[] = {"and", "or", "the", "my", "This", "is", "in","frog"};
+    char* frenchWords[] = {"et", "ou", "le", "la", "mon", "ma", "Cet", "Cette", "en", "est"}; 
+    int numEnglishWords = sizeof(englishWords) / sizeof(englishWords[0]);
+    int numFrenchWords = sizeof(frenchWords) / sizeof(frenchWords[0]); 
+    // Check if the word matches any of the English target words
+    int eng;
+    for (eng = 0; eng < numEnglishWords; ++eng) {
+        if (strcmp(word, englishWords[eng]) == 0) {
+            return 1; // Match found in English words
+        }
+    }
+    // Check if the word matches any of the French target words
+    int fr;
+    for (fr = 0; fr < numFrenchWords; ++fr) {
+        if (strcmp(word, frenchWords[fr]) == 0) {
+            return 1; // Match found in French words
         }
     }
     return 0; // No match found
 }
-
 // Function to decode text with all possible shift values and check for target words
-void decode(char* inputFile) {
+void shiftDecode(char* inputFile) {
     FILE* inputFilePointer; // Input file pointer
     unsigned char ch;
     char word[MAX_WORD_LENGTH]; // Buffer to store a word
@@ -224,55 +234,80 @@ void decode(char* inputFile) {
         }
     }
 
+    // Close the file
     fclose(inputFilePointer);
+        
+    printf("Original Text: \n");
+    printf("Shift: 0 : ");
+    inputFilePointer = fopen(inputFile, "r");
+    while ((fscanf(inputFilePointer, "%c", &ch)) != EOF) {
+       	printf("%c", ch);
+	}
+	printf("\n");
+	fclose(inputFilePointer);
 
     // Print possible decodes to console
     if (decodeCount == 0) {
         printf("No possible decodes found.\n");
     } else {
         printf("Possible decodes:\n");
-        int k;
-        for (k = 0; k < decodeCount; ++k) {
-            printf("%s : %d\n", possibleDecodes[k], decodeShifts[k]);
+        int m;
+        for (m = 0; m < decodeCount; ++m) {
+            printf("%s : %d\n", possibleDecodes[m], decodeShifts[m]);
         }
         
         // Decode and print the entire input text according to the unique shift values
-        printf("Decoded text:\n");
-        inputFilePointer = fopen(inputFile, "r");
-        if (inputFilePointer == NULL) {
-            printf("Error: Unable to open input file for decoding.\n");
-            return;
-        }
-        
-		while ((fscanf(inputFilePointer,"%c", &ch)) != EOF){ //if fp exists and until end of file (EOF)
-            if (isalpha(ch)) {
-				if (islower(ch)) {
-					int lower  = 'a' + (ch - 'a' - decodeShifts[0]) % 26; //Example: 97+(ch-97+shiftNum) % 26  --> 97+(97-97+1)%26 = 98 = b; (98-97
-		    		if(lower<'a'){ //97
-		    			lower = 'z' + (ch - 'z' - decodeShifts[0]) % 26; //122+(98-122+3)%26
-		    			ch = lower;
-					}
-					else{
-						ch = lower;
-					}
-		    	}
-				else if (isupper(ch)) {
-					int upper = 'A' + (ch - 'A' - decodeShifts[0]) % 26; //Example: 65+(ch-65+shiftNum) % 26 --> 65+(65-65+1)%26 = 66 = B
-		        	if(upper<'A'){
-		    			upper = 'Z' + (ch - 'Z' - decodeShifts[0]) % 26;
-		    			ch = upper;
-					}
-					else{
-		        		ch = upper;
-					}
-		    	}
+        printf("Decoded text: ");
+        int k;
+        for (k = 0; k < decodeCount; ++k) {
+            inputFilePointer = fopen(inputFile, "r");
+            if (inputFilePointer == NULL) {
+                printf("Error: Unable to open input file for decoding.\n");
+                return;
+            }        
+		    // Skip the decoding process if the same shift value has occurred before
+		    int skip = 0;
+		    int i;
+		    for (i = 0; i < k; ++i) {
+		        if (decodeShifts[i] == decodeShifts[k]) {
+		            skip = 1;
+		            break;
+		        }
+		    }
+		    if (skip) {
+		        fclose(inputFilePointer);
+		        continue;
+		    }
+		    else{
+		    	printf("\nShift: %d : ", decodeShifts[k]);
 			}
-            if (isprint(ch)) {
-        		printf("%c", ch); // Print the decoded character if it's printable
-    		}
+            
+            while ((fscanf(inputFilePointer, "%c", &ch)) != EOF) { //if fp exists and until end of file (EOF)
+                if (isalpha(ch)) {
+                    if (islower(ch)) {
+                        int lower = 'a' + (ch - 'a' - decodeShifts[k] + 26) % 26; //Example: 97+(ch-97+shiftNum) % 26  --> 97+(97-97+1)%26 = 98 = b; (98-97
+                        if (lower < 'a') { //97
+                            lower = 'z' + (ch - 'z' - decodeShifts[k]) % 26; //122+(98-122+3)%26
+                            ch = lower;
+                        } else {
+                            ch = lower;
+                        }
+                    } else if (isupper(ch)) {
+                        int upper = 'A' + (ch - 'A' - decodeShifts[k] + 26) % 26; //Example: 65+(ch-65+shiftNum) % 26 --> 65+(65-65+1)%26 = 66 = B
+                        if (upper < 'A') {
+                            upper = 'Z' + (ch - 'Z' - decodeShifts[k]) % 26;
+                            ch = upper;
+                        } else {
+                            ch = upper;
+                        }
+                    }
+                }
+                if (isprint(ch)) {
+                    printf("%c", ch); // Print the decoded character if it's printable
+                }
+            }
+            fclose(inputFilePointer);
         }
-        fclose(inputFilePointer);
         printf("\n");
-        return;
     }
 }
