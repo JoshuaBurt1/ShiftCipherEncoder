@@ -6,6 +6,9 @@
 #define OUTPUT 2
 #define SHIFT 3
 #define ENCODE 4
+#define DECODE 5
+#define MAX_WORD_LENGTH 20 // Maximum length of a word to check
+#define MAX_POSSIBLE_DECODES 100 // Maximum number of possible decodes
 #define STARS "***********************************************************************"
 
 //menu display of valid options
@@ -22,4 +25,9 @@ int shift(int number);
 
 //shifts inputFile text by shiftNum and outputs shifted text to outputFile
 void encode(char* inputFile, char* outputFile, int shiftNum);
+
+int wordMatchesList(char* word);
+
+//attempts to decode an inputFile text and outputs text to outputFile
+void decode(char* inputFile);
 

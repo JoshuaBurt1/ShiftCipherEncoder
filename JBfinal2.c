@@ -26,6 +26,9 @@ int main(void){
         else if (choice == ENCODE) {
            encode(inputFile, outputFile, shiftNum);
         }
+        else if (choice == DECODE) {
+           decode(inputFile);
+        }
         printf("\n");
     }
 	return 0;
@@ -38,9 +41,10 @@ int menu(char* inputFile, char* outputFile, int shiftNum){
     printf("1 Enter name of input file (Current file: \"%s\") \n", inputFile);
     printf("2 Enter name of output file (Current file: \"%s\") \n", outputFile);
     printf("3 Enter number of characters data should be shifted (Shift amount: %d) \n", shiftNum);
-    printf("4 Encode the text\n\n");
+    printf("4 Encode the text\n");
+    printf("5 Decode the text\n\n");
     printf("0 Quit this program.\n\n");
-    while((scanf(" %d", &option) != 1) || (option < 0) || (option > 4)) { //while there is an invalid choice
+    while((scanf(" %d", &option) != 1) || (option < 0) || (option > 5)) { //while there is an invalid choice
         fflush(stdin);
         printf("That selection isn't valid. Please try again.\n");
         printf("Your choice? ");
@@ -154,3 +158,121 @@ void encode(char* inputFile, char* outputFile, int shiftNum){
 	}	
 }
 
+// Function to check if a word matches a list of target words
+int wordMatchesList(char* word) {
+    char* targetWords[] = {"and", "or", "the", "my", "This"}; // List of target words
+    int numTargetWords = sizeof(targetWords) / sizeof(targetWords[0]); // Number of target words
+	int i;
+    for (i = 0; i < numTargetWords; ++i) {
+        if (strcmp(word, targetWords[i]) == 0) {
+            return 1; // Match found
+        }
+    }
+    return 0; // No match found
+}
+
+// Function to decode text with all possible shift values and check for target words
+void decode(char* inputFile) {
+    FILE* inputFilePointer; // Input file pointer
+    unsigned char ch;
+    char word[MAX_WORD_LENGTH]; // Buffer to store a word
+    char possibleDecodes[MAX_POSSIBLE_DECODES][100]; // Array to store possible decodes
+    int decodeShifts[MAX_POSSIBLE_DECODES]; // Array to store corresponding shift values
+    int decodeCount = 0; // Counter for number of possible decodes
+    char decoded[100]; // Buffer for decoded string
+    int q = 0; // Index for decoded string
+
+    inputFilePointer = fopen(inputFile, "r");
+    if (inputFilePointer == NULL) {
+        printf("Error: Unable to open input file.\n");
+        return;
+    }
+
+    // Loop over all words in the input file
+    while (fscanf(inputFilePointer, "%s", word) == 1) {
+        // Loop over all possible shift values
+        int shiftNum;
+        for (shiftNum = 0; shiftNum < 26; ++shiftNum) {
+            int i = 0; // Index for decoded string
+
+            // Decode the current word
+            int j;
+            for (j = 0; word[j] != '\0'; ++j) {
+                ch = word[j];
+                if (isalpha(ch)) {
+                    if (islower(ch)) {
+                        int lower = 'a' + (ch - 'a' - shiftNum + 26) % 26; // Reverse the shift
+                        decoded[i++] = lower;
+                    } else if (isupper(ch)) {
+                        int upper = 'A' + (ch - 'A' - shiftNum + 26) % 26; // Reverse the shift
+                        decoded[i++] = upper;
+                    }
+                } else {
+                    decoded[i++] = ch; // Non-alphabetic characters are left unchanged
+                }
+            }
+            decoded[i] = '\0'; // Null-terminate the decoded string
+
+            // Check if the decoded word matches the target list
+            if (wordMatchesList(decoded)) {
+                // Add the decoded string and corresponding shift value to the arrays
+                strcpy(possibleDecodes[decodeCount], decoded);
+                decodeShifts[decodeCount] = shiftNum;
+                decodeCount++; // Increment the counter
+                break; // Stop further processing for this word
+            }
+        }
+    }
+
+    fclose(inputFilePointer);
+
+    // Print possible decodes to console
+    if (decodeCount == 0) {
+        printf("No possible decodes found.\n");
+    } else {
+        printf("Possible decodes:\n");
+        int k;
+        for (k = 0; k < decodeCount; ++k) {
+            printf("%s : %d\n", possibleDecodes[k], decodeShifts[k]);
+        }
+        
+        // Decode and print the entire input text according to the unique shift values
+        printf("Decoded text:\n");
+        inputFilePointer = fopen(inputFile, "r");
+        if (inputFilePointer == NULL) {
+            printf("Error: Unable to open input file for decoding.\n");
+            return;
+        }
+        
+		while ((fscanf(inputFilePointer,"%c", &ch)) != EOF){ //if fp exists and until end of file (EOF)
+            if (isalpha(ch)) {
+				if (islower(ch)) {
+					int lower  = 'a' + (ch - 'a' - decodeShifts[0]) % 26; //Example: 97+(ch-97+shiftNum) % 26  --> 97+(97-97+1)%26 = 98 = b; (98-97
+		    		if(lower<'a'){ //97
+		    			lower = 'z' + (ch - 'z' - decodeShifts[0]) % 26; //122+(98-122+3)%26
+		    			ch = lower;
+					}
+					else{
+						ch = lower;
+					}
+		    	}
+				else if (isupper(ch)) {
+					int upper = 'A' + (ch - 'A' - decodeShifts[0]) % 26; //Example: 65+(ch-65+shiftNum) % 26 --> 65+(65-65+1)%26 = 66 = B
+		        	if(upper<'A'){
+		    			upper = 'Z' + (ch - 'Z' - decodeShifts[0]) % 26;
+		    			ch = upper;
+					}
+					else{
+		        		ch = upper;
+					}
+		    	}
+			}
+            if (isprint(ch)) {
+        		printf("%c", ch); // Print the decoded character if it's printable
+    		}
+        }
+        fclose(inputFilePointer);
+        printf("\n");
+        return;
+    }
+}
